@@ -9,12 +9,15 @@ function Awake () {
 function Update () {
 	// Get the input vector from kayboard or analog stick
 	var directionVector = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
+	//var angH = Input.GetAxis("RightH");
+
 	
 	if (directionVector != Vector3.zero) {
 		// Get the length of the directon vector and then normalize it
 		// Dividing by the length is cheaper than normalizing when we already have the length anyway
 		var directionLength = directionVector.magnitude;
 		directionVector = directionVector / directionLength;
+		
 		
 		// Make sure the length is no bigger than 1
 		directionLength = Mathf.Min(1, directionLength);
@@ -25,10 +28,13 @@ function Update () {
 		
 		// Multiply the normalized direction vector by the modified length
 		directionVector = directionVector * directionLength;
+		
+		//transform.localEulerAngles = new Vector3(0, angH, 0);
 	}
 	
 	// Apply the direction to the CharacterMotor
-	motor.inputMoveDirection = transform.rotation * directionVector;
+	//motor.inputMoveDirection = transform.rotation * directionVector;
+	motor.inputMoveDirection = Camera.main.transform.rotation * directionVector;
 	motor.inputJump = Input.GetButton("Jump");
 }
 

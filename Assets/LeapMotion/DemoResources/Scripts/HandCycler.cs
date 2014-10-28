@@ -22,7 +22,7 @@ public class HandCycler : MonoBehaviour {
     HandController controller = GetComponent<HandController>();
     controller.leftGraphicsModel = leftHands[hand_index_];
     controller.rightGraphicsModel = rightHands[hand_index_];
-    controller.DestroyAllHands();
+    //controller.DestroyAllHands();
   }
 
   void OnGUI() {

@@ -5,7 +5,7 @@
 	<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
 	<ProductVersion>10.0.20506</ProductVersion>
 	<SchemaVersion>2.0</SchemaVersion>
-	<ProjectGuid>{78F532F0-BD3E-338F-8C1B-8E19A10B5EB4}</ProjectGuid>
+	<ProjectGuid>{B30C5E51-6384-264A-8B3D-C2DF71BB71D9}</ProjectGuid>
 	<OutputType>Library</OutputType>
 	<AppDesignerFolder>Properties</AppDesignerFolder>
 	<RootNamespace></RootNamespace>
@@ -50,14 +50,16 @@
      <Compile Include="Assets\Destroyed_city_FREE\Standard Assets\Character Controllers\Sources\Scripts\FPSInputController.js" />
      <Compile Include="Assets\Dive\DiveFPSController.js" />
      <Compile Include="Assets\Dive\splashscreen.js" />
+     <Compile Include="Assets\scripts\follo.js" />
      <None Include="Assets\Plugins\donotdelete.txt" />
      <None Include="Assets\Destroyed_city_FREE\Destroyed_city_FREE_Info.txt" />
      <None Include="Assets\OVR\Shaders\TextShader3D.shader" />
      <None Include="Assets\Destroyed_city_FREE\Standard Assets\Water (Pro Only)\Sources\Shaders\FX-Water.shader" />
      <None Include="Assets\OVR\Shaders\OVRGUIShader.shader" />
      <None Include="Assets\Destroyed_city_FREE\Shaders\AlphaTest-DiffuseDoubleSide.shader" />
+     <None Include="Assets\LeapMotion\Shaders\LeapUndistorted.shader" />
  <Reference Include="LeapCSharp.NET3.5">
- <HintPath>C:/Users/Jose/Desktop/TAMUHACK/Assets/Plugins/LeapCSharp.NET3.5.dll</HintPath>
+ <HintPath>C:/Users/Jose/Desktop/MORE MORE FINAL/Versions/4.1/TAMUHACK2/Assets/Plugins/LeapCSharp.NET3.5.dll</HintPath>
  </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

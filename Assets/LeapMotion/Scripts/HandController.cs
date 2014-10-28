@@ -12,8 +12,8 @@ using Leap;
 public class HandController : MonoBehaviour {
 
   // Reference distance from thumb base to pinky base in mm.
+  protected const float MODEL_PALM_WIDTH = 85.0f;
   protected const float GIZMO_SCALE = 5.0f;
-  protected const float MM_TO_M = 0.001f;
 
   public bool separateLeftRight = false;
   public HandModel leftGraphicsModel;
@@ -23,7 +23,6 @@ public class HandController : MonoBehaviour {
 
   public ToolModel toolModel;
 
-  public bool isHeadMounted = false;
   public bool mirrorZAxis = false;
 
   // If hands are in charge of Destroying themselves, make this false.
@@ -37,35 +36,21 @@ public class HandController : MonoBehaviour {
   public float recorderSpeed = 1.0f;
   public bool recorderLoop = true;
   
-  protected LeapRecorder recorder_ = new LeapRecorder();
+  private LeapRecorder recorder_ = new LeapRecorder();
   
-  protected Controller leap_controller_;
+  private Controller leap_controller_;
 
-  protected Dictionary<int, HandModel> hand_graphics_;
-  protected Dictionary<int, HandModel> hand_physics_;
-  protected Dictionary<int, ToolModel> tools_;
+  private Dictionary<int, HandModel> hand_graphics_;
+  private Dictionary<int, HandModel> hand_physics_;
+  private Dictionary<int, ToolModel> tools_;
   
   void OnDrawGizmos() {
-    // Draws the little Leap Motion Controller in the Editor view.
     Gizmos.matrix = Matrix4x4.Scale(GIZMO_SCALE * Vector3.one);
     Gizmos.DrawIcon(transform.position, "leap_motion.png");
   }
 
-  void Awake() {
-    leap_controller_ = new Controller();
-
-    // Optimize for top-down tracking if on head mounted display.
-    Controller.PolicyFlag policy_flags = leap_controller_.PolicyFlags;
-    if (isHeadMounted)
-      policy_flags |= Controller.PolicyFlag.POLICY_OPTIMIZE_HMD;
-    else
-      policy_flags &= ~Controller.PolicyFlag.POLICY_OPTIMIZE_HMD;
-
-    leap_controller_.SetPolicyFlags(policy_flags);
-  }
-
   void Start() {
-    // Initialize hand lookup tables.
+    leap_controller_ = new Controller();
     hand_graphics_ = new Dictionary<int, HandModel>();
     hand_physics_ = new Dictionary<int, HandModel>();
 
@@ -80,29 +65,46 @@ public class HandController : MonoBehaviour {
       recorder_.Load(recordingAsset);
   }
 
-  public void IgnoreCollisionsWithHands(GameObject to_ignore, bool ignore = true) {
-    foreach (HandModel hand in hand_physics_.Values)
-      Leap.Utils.IgnoreCollisions(hand.gameObject, to_ignore, ignore);
+  private void IgnoreCollisions(GameObject first, GameObject second, bool ignore = true) {
+    if (first == null || second == null)
+      return;
+
+    Collider[] first_colliders = first.GetComponentsInChildren<Collider>();
+    Collider[] second_colliders = second.GetComponentsInChildren<Collider>();
+
+    for (int i = 0; i < first_colliders.Length; ++i) {
+      for (int j = 0; j < second_colliders.Length; ++j)
+        Physics.IgnoreCollision(first_colliders[i], second_colliders[j], ignore);
+    }
   }
 
-  protected HandModel CreateHand(HandModel model) {
+  private void IgnoreCollisionsWithChildren(GameObject to_ignore) {
+    IgnoreCollisions(gameObject, to_ignore);
+  }
+
+  public void IgnoreCollisionsWithHands(GameObject to_ignore, bool ignore = true) {
+    foreach (HandModel hand in hand_physics_.Values)
+      IgnoreCollisions(hand.gameObject, to_ignore, ignore);
+  }
+
+  private HandModel CreateHand(HandModel model) {
     HandModel hand_model = Instantiate(model, transform.position, transform.rotation)
                            as HandModel;
     hand_model.gameObject.SetActive(true);
-    Leap.Utils.IgnoreCollisions(hand_model.gameObject, gameObject);
+    IgnoreCollisionsWithChildren(hand_model.gameObject);
     return hand_model;
   }
 
-  protected void DestroyHand(HandModel hand_model) {
+  private void DestroyHand(HandModel hand_model) {
     if (destroyHands)
       Destroy(hand_model.gameObject);
     else
       hand_model.SetLeapHand(null);
   }
 
-  protected void UpdateHandModels(Dictionary<int, HandModel> all_hands,
-                                  HandList leap_hands,
-                                  HandModel left_model, HandModel right_model) {
+  private void UpdateHandModels(Dictionary<int, HandModel> all_hands,
+                                HandList leap_hands,
+                                HandModel left_model, HandModel right_model) {
     List<int> ids_to_check = new List<int>(all_hands.Keys);
 
     // Go through all the active hands and update them.
@@ -131,8 +133,8 @@ public class HandController : MonoBehaviour {
           new_hand.SetController(this);
 
           // Set scaling based on reference hand.
-          float hand_scale = MM_TO_M * leap_hand.PalmWidth / new_hand.handModelPalmWidth;
-          new_hand.transform.localScale = hand_scale * transform.lossyScale;
+          float hand_scale = leap_hand.PalmWidth / MODEL_PALM_WIDTH;
+          new_hand.transform.localScale = hand_scale * transform.localScale;
 
           new_hand.InitHand();
           new_hand.UpdateHand();
@@ -145,8 +147,8 @@ public class HandController : MonoBehaviour {
           hand_model.MirrorZAxis(mirrorZAxis);
 
           // Set scaling based on reference hand.
-          float hand_scale = MM_TO_M * leap_hand.PalmWidth / hand_model.handModelPalmWidth;
-          hand_model.transform.localScale = hand_scale * transform.lossyScale;
+          float hand_scale = leap_hand.PalmWidth / MODEL_PALM_WIDTH;
+          hand_model.transform.localScale = hand_scale * transform.localScale;
           hand_model.UpdateHand();
         }
       }
@@ -159,15 +161,16 @@ public class HandController : MonoBehaviour {
     }
   }
 
-  protected ToolModel CreateTool(ToolModel model) {
-    ToolModel tool_model = Instantiate(model, transform.position, transform.rotation) as ToolModel;
+  private ToolModel CreateTool(ToolModel model) {
+    ToolModel tool_model = Instantiate(model, transform.position, transform.rotation)
+                           as ToolModel;
     tool_model.gameObject.SetActive(true);
-    Leap.Utils.IgnoreCollisions(tool_model.gameObject, gameObject);
+    IgnoreCollisionsWithChildren(tool_model.gameObject);
     return tool_model;
   }
 
-  protected void UpdateToolModels(Dictionary<int, ToolModel> all_tools,
-                                  ToolList leap_tools, ToolModel model) {
+  private void UpdateToolModels(Dictionary<int, ToolModel> all_tools,
+                                ToolList leap_tools, ToolModel model) {
     List<int> ids_to_check = new List<int>(all_tools.Keys);
 
     // Go through all the active tools and update them.
@@ -195,7 +198,7 @@ public class HandController : MonoBehaviour {
         tool_model.MirrorZAxis(mirrorZAxis);
 
         // Set scaling.
-        tool_model.transform.localScale = transform.lossyScale;
+        tool_model.transform.localScale = transform.localScale;
 
         tool_model.UpdateTool();
       }
@@ -208,11 +211,7 @@ public class HandController : MonoBehaviour {
     }
   }
 
-  public Controller GetLeapController() {
-    return leap_controller_;
-  }
-
-  public Frame GetFrame() {
+  Frame GetFrame() {
     if (enableRecordPlayback && recorder_.state == RecorderState.Playing)
       return recorder_.GetCurrentFrame();
 
@@ -235,50 +234,6 @@ public class HandController : MonoBehaviour {
     Frame frame = GetFrame();
     UpdateHandModels(hand_physics_, frame.Hands, leftPhysicsModel, rightPhysicsModel);
     UpdateToolModels(tools_, frame.Tools, toolModel);
-  }
-
-  public bool IsConnected() {
-    return leap_controller_.IsConnected;
-  }
-
-  public bool IsEmbedded() {
-    DeviceList devices = leap_controller_.Devices;
-    if (devices.Count == 0)
-      return false;
-    return devices[0].IsEmbedded;
-  }
-
-  public HandModel[] GetAllGraphicsHands() {
-    if (hand_graphics_ == null)
-      return new HandModel[0];
-
-    HandModel[] models = new HandModel[hand_graphics_.Count];
-    hand_graphics_.Values.CopyTo(models, 0);
-    return models;
-  }
-
-  public HandModel[] GetAllPhysicsHands() {
-    if (hand_physics_ == null)
-      return new HandModel[0];
-
-    HandModel[] models = new HandModel[hand_physics_.Count];
-    hand_physics_.Values.CopyTo(models, 0);
-    return models;
-  }
-
-  public void DestroyAllHands() {
-    if (hand_graphics_ != null) {
-      foreach (HandModel model in hand_graphics_.Values)
-        Destroy(model.gameObject);
-
-      hand_graphics_.Clear();
-    }
-    if (hand_physics_ != null) {
-      foreach (HandModel model in hand_physics_.Values)
-        Destroy(model.gameObject);
-
-      hand_physics_.Clear();
-    }
   }
 
   public float GetRecordingProgress() {
@@ -311,7 +266,7 @@ public class HandController : MonoBehaviour {
     recorder_.Record();
   }
 
-  protected void UpdateRecorder() {
+  void UpdateRecorder() {
     if (!enableRecordPlayback)
       return;
 

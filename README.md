@@ -1,1 +1,0 @@
-"Attack on Titan" themed Unity-3D game/demo.

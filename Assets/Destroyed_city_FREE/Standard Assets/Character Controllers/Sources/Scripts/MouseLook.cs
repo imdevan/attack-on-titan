@@ -44,6 +44,7 @@ public class MouseLook : MonoBehaviour {
 		else if (axes == RotationAxes.MouseX)
 		{
 			transform.Rotate(0, Input.GetAxis("Mouse X") * sensitivityX, 0);
+			//transform.Rotate(0, Input.GetAxis("RightH") * sensitivityX, 0);
 		}
 		else
 		{
